@@ -40,10 +40,6 @@ export const chainList = [
     address: "0x92d6c1e31e14520e676a687f0a93788b716beff5",
   },
   {
-    symbol: "LDO",
-    address: "0x5a98fcbea516cf06857215779fd812ca3bef1b32",
-  },
-  {
     symbol: "ARB",
     address: "0xB50721BCf8d664c30412Cfbc6cf7a15145234ad1",
   },
