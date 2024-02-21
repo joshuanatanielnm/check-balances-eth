@@ -1,5 +1,5 @@
 import { Inter } from "next/font/google";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ethers } from "ethers";
@@ -52,8 +52,8 @@ export default function Home() {
         const symbol = await contract.symbol();
         const decimals = await contract.decimals();
         if (formatChainBalance !== "0.0") {
-          const isEther = decimals !== 18;
-          if (isEther) {
+          const isNotEther = Number(decimals) !== 18;
+          if (isNotEther) {
             const formatUnits = ethers.formatUnits(
               Number(chainBalance),
               decimals
@@ -74,15 +74,14 @@ export default function Home() {
         setData(balances);
         return chainBalance;
       });
-      setIsLoading(false);
     } catch (error) {
       toast({
         title: "Error: invalid wallet address",
         description: "Please check your wallet address",
       });
-      setIsLoading(false);
       setAddress("");
     }
+    setIsLoading(false);
   };
 
   return (
@@ -111,7 +110,7 @@ export default function Home() {
         Check balance
       </Button>
       <div className="flex flex-col w-full gap-6">
-        {isLoading && (
+        {isLoading && !data && (
           <>
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
