@@ -32,11 +32,14 @@ export default function Home() {
         `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_RPC_API_KEY}`
       );
       const balance = await provider.getBalance(address);
-      balances.push({
-        balance: ethers.formatEther(balance),
-        symbol: "ETH",
-        name: "Ethereum",
-      });
+      const formatEtherBalance = ethers.formatEther(balance);
+      if (formatEtherBalance !== "0.0") {
+        balances.push({
+          balance: formatEtherBalance,
+          symbol: "ETH",
+          name: "Ethereum",
+        });
+      }
       chainList.map(async (chain) => {
         const contract = new ethers.Contract(
           chain.address,
