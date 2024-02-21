@@ -52,7 +52,7 @@ export default function Home() {
         const symbol = await contract.symbol();
         const decimals = await contract.decimals();
         if (formatChainBalance !== "0.0") {
-          const isEther = decimals === 18;
+          const isEther = decimals !== 18;
           if (isEther) {
             const formatUnits = ethers.formatUnits(
               Number(chainBalance),
