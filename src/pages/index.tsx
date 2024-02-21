@@ -1,117 +1,143 @@
-import Image from "next/image";
 import { Inter } from "next/font/google";
-
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ethers } from "ethers";
+import { chainList } from "@/data/chain-list";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { useToast } from "@/components/ui/use-toast";
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
+  const [address, setAddress] = useState<string>("");
+  const [data, setData] =
+    useState<{ balance: string; symbol: string; name: string }[]>();
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const checkBalance = async () => {
+    setData(undefined);
+    try {
+      setIsLoading(true);
+      const balances: { balance: string; symbol: string; name: string }[] = [];
+      const ERC20_ABI = [
+        "function name() view returns (string)",
+        "function symbol() view returns (string)",
+        "function totalSupply() view returns (uint256)",
+        "function decimals() view returns (uint256)",
+        "function balanceOf(address) view returns (uint256)",
+      ];
+      // UPDATE THIS WITH YOUR RPC PROVIDER
+      const provider = new ethers.JsonRpcProvider(
+        `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_RPC_API_KEY}`
+      );
+      const balance = await provider.getBalance(address);
+      balances.push({
+        balance: ethers.formatEther(balance),
+        symbol: "ETH",
+        name: "Ethereum",
+      });
+      chainList.map(async (chain) => {
+        const contract = new ethers.Contract(
+          chain.address,
+          ERC20_ABI,
+          provider
+        );
+        const chainBalance = await contract.balanceOf(address);
+        const formatChainBalance = ethers.formatEther(chainBalance);
+        const name = await contract.name();
+        const symbol = await contract.symbol();
+        const decimals = await contract.decimals();
+        if (formatChainBalance !== "0.0") {
+          const isEther = decimals === 18;
+          if (isEther) {
+            const formatUnits = ethers.formatUnits(
+              Number(chainBalance),
+              decimals
+            );
+            balances.push({
+              balance: formatUnits,
+              symbol: symbol,
+              name,
+            });
+          } else {
+            balances.push({
+              balance: formatChainBalance,
+              symbol: symbol,
+              name,
+            });
+          }
+        }
+        setData(balances);
+        return chainBalance;
+      });
+      setIsLoading(false);
+    } catch (error) {
+      toast({
+        title: "Error: invalid wallet address",
+        description: "Please check your wallet address",
+      });
+      setIsLoading(false);
+      setAddress("");
+    }
+  };
+
   return (
     <main
-      className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
+      className={`flex min-h-screen flex-col items-center p-12 ${inter.className} gap-10 max-w-xl mx-auto`}
     >
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/pages/index.tsx</code>
+      <div>
+        <h1 className="text-3xl font-bold text-center">
+          Check your account balance
+        </h1>
+        <p className="text-center text-sm pt-4">
+          Simple project demonstrating how to use ethers.js on the client side.
         </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
       </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+      <Input
+        value={address}
+        onChange={(e) => setAddress(e.target.value)}
+        placeholder="Account address"
+      />
+      <Button
+        className="w-full"
+        onClick={checkBalance}
+        disabled={isLoading || address === ""}
+        size="lg"
+      >
+        Check balance
+      </Button>
+      <div className="flex flex-col w-full gap-6">
+        {isLoading && (
+          <>
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </>
+        )}
+        {!isLoading &&
+          data &&
+          data.map((value) => (
+            <div
+              key={value.symbol}
+              className="bg-gray-900 w-full p-4 flex gap-2 text-white rounded-lg"
+            >
+              <Avatar className="my-auto">
+                <AvatarImage
+                  src={`/icons/${value.symbol}.webp`}
+                  className="w-10"
+                />
+                <AvatarFallback>{value.symbol}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p>{value.name}</p>
+                <p>
+                  {value.balance} {value.symbol}
+                </p>
+              </div>
+            </div>
+          ))}
       </div>
     </main>
   );
