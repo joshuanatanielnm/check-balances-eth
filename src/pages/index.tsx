@@ -128,7 +128,7 @@ export default function Home() {
             >
               <Avatar className="my-auto">
                 <AvatarImage
-                  src={`/icons/${value.symbol}.webp`}
+                  src={`icons/${value.symbol}.webp`}
                   className="w-10"
                 />
                 <AvatarFallback>{value.symbol}</AvatarFallback>
